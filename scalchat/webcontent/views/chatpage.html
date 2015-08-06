@@ -1,0 +1,59 @@
+<script>
+    //    var socket = io();
+    function getInfo(name) {
+//            window.location = "/cmd/" + name;
+        var text = $("#input_textarea").val();
+//            alert(text) ;
+        $("#input_textarea").val("");
+        socket.emit('message_sent', {
+            'id': UID,
+            'name': userName,
+            'remoteID': remoteChatter.CId,
+            'text': text
+        });
+        $("#message_display_div").append("<div class='row' style='margin-left: 10px; margin-bottom: 25px;' ><div class='col-xs-8 chatpage_chatcontent chatpage_localcontent'>" + text + "</div><div align='center' class='col-xs-4' style='border:1px solid;border-radius: 5px'>me</div></div>");
+        <!--scroll the content to the bottom-->
+        $("#chatpage_message_col").scrollTop($("#chatpage_message_col").height()) ;
+
+
+    }
+    socket.on("message_received", function (msg) {
+//        alert(JSON.stringify(msg)) ;
+        $("#message_display_div").append("<div class='row' style='margin-right: 10px;margin-bottom: 25px;' ><div align='center' class='col-xs-4' style='border:1px solid;border-radius: 5px'>" + msg.name + "</div><div class='col-xs-8 chatpage_chatcontent'>" + msg.text + "</div></div>");
+        <!--scroll the content to the bottom-->
+        $("#chatpage_message_col").scrollTop($("#chatpage_message_col").height()) ;
+        <!--notify the native code to vibrate-->
+        sendCMD("vibrate") ;
+    });
+</script>
+<style>
+    .chatpage_chatcontent {
+        border: 1px solid;
+        border-radius: 5px;
+        word-break: break-all;
+    }
+
+    .chatpage_localcontent {
+        background-color: #05D302;
+    }
+</style>
+<div class="container-fluid" style="height: 100%; margin: 0px">
+    <div class="row" style="height: 90%; margin: 0px">
+
+        <div class="col-sm-12" style="background-color: white; box-shadow:
+         inset 1px -1px 1px #444, inset -1px 1px 1px #444; height: 100%; overflow: auto; border-radius: 10px; margin: 0px" id="chatpage_message_col">
+            <div class="container-fluid" id="message_display_div">
+            </div>
+        </div>
+    </div>
+    <div class="row" style="height: 10%; margin: 0px">
+        <div class="col-sm-12" style="background-color: lightgray;box-shadow:
+         inset 1px -1px 1px #444, inset -1px 1px 1px #444;height: 100%; width: 100% overflow: auto; border-radius: 10px; margin: 0px">
+            <textarea id="input_textarea" style="height: 100%; width: 65%;margin: 0px"></textarea>
+            <button type="button" class="btn btn-default" style="height: 90%;margin: 2px; width: 30%; margin: 2px"
+                    onclick="getInfo('messageSend')">
+                send
+            </button>
+        </div>
+    </div>
+</div>

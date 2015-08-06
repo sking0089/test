@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html style="height: 100%; margin: 0px">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<head>
+    <title></title>
+    <link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io.connect("http://localhost:3000", {'reconnect':true,'auto connect':true, 'force new connection': true});
+        var UID = "";
+        var userName = "";
+        var remoteChatter;
+        var resJson;
+        function testFindUID() {
+            UID = $("#test_uid").val();
+            userName = $("#test_name").val();
+//            alert(UID + name);
+            pageChange("#welcome_div", "#find_through_contact_div");
+            socket.emit('user_register', {
+                'id': UID,
+                'name': userName
+            });
+            changeTab(null, "#find_tab");
+//            socket.disconnect();
+//            $("#welcome_div").css("display", "none");
+//            $("#find_through_contact_div").css("display", "");
+        }
+
+        function disconnectSocket(){
+            socket.disconnect() ;
+        }
+
+        function reconnectSocket(){
+            socket.io.reconnect() ;
+        }
+        socket.on("connect", function(){
+            socket.emit('user_register', {
+                'id': UID,
+                'name': userName
+            });
+        })
+
+
+        function loadChatPage(index) {
+//            alert(index) ;
+//            alert(JSON.stringify(resJson[index])) ;
+//            socket.io.reconnect();
+            remoteChatter = resJson[index];
+            $.ajax({
+                async: false,
+                type: "POST",
+                url: "/chat",
+                dataType: "json",
+                data: resJson[index],
+                error: function (err) {
+                    alert("error" + JSON.stringify(err));
+                }, success: function (data) {
+//                    alert("success" + data.content);
+                    pageChange("#find_through_contact_div", "#chat_div");
+                    $("#chat_div").append(data.content);
+                }
+            })
+        }
+
+
+        function changeTab(src, dest) {
+            if (src != null)
+                $(src).css("background-color", "white");
+            $(dest).css("background-color", "lightgray");
+        }
+
+        function loadContact() {
+            pageChange("#find_div", "#find_through_contact_div");
+//            window.location = "/cmd/loadContact";
+        }
+        function pageChange(src, dest) {
+            $(src).css("display", "none");
+            $(dest).css("display", "block");
+        }
+        function sendCMD(cmd) {
+            window.location = "/cmd/" + cmd;
+        }
+        function sendFindCmd() {
+            sendCMD("findContactCmdWith/" + $("#search_input").val());
+        }
+        function loadSearchResultForIOS(res) {
+//            alert(res) ;
+            resJson = $.parseJSON(res);
+            var appendString = '<ul class="list-group" >';
+            for (i = 0; i < resJson.length; i++) {
+                var index = i;
+                appendString += "<li class='list-group-item search_result_item '> <table class='table table-bordered no_margin'> <tbody> <tr> <td colspan='2'>" + resJson[i].name + "</tr> <tr><td>" + resJson[i].dep + "</td><td>" + resJson[i].pos + "</td></tr><tr><td colspan='2'><div align='center'><button type='button' class='btn btn-primary' onclick='loadChatPage(" + i + ")'>发送消息</button></div></td></tr></tbody></table></li>";
+            }
+            appendString += "</ul>";
+//            alert(appendString);
+            $("#search_result_ul").empty();
+            $("#search_result_ul").append(appendString);
+        }
+    </script>
+    <style>
+
+        .search_result_item {
+            margin-bottom: 5px;
+        }
+
+        #chat_div, #contact_div, #find_div {
+            margin-top: 5px;
+
+        }
+
+        .no_margin {
+            margin: 0px;
+        }
+
+        .no_padding {
+            padding: 0px;
+        }
+
+        .no_padding_top {
+            padding-top: 0px;
+        }
+
+        .no_padding_bottom {
+            padding-bottom: 0px;
+        }
+
+        .no_padding_top_bottom {
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+
+        .full_width {
+            width: 100%;
+        }
+
+        .full_height {
+            height: 100%;
+        }
+
+        .float_right {
+            float: right;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0px">
+
+<div class="container-fluid" style="height: 100%; margin: 0px">
+
+    <div class="row" style="height: 85%;margin: 0px">
+
+        <div class="col-xs-12" style="background-color: #dedef8; box-shadow:
+         inset 1px -1px 1px #444, inset -1px 1px 1px #444; height: 100%; overflow: auto">
+            <!--welcome page for test-->
+            <div class="container" id="welcome_div">
+                <div align="center">
+                    <input type="text" id="test_uid" style="margin-top: 20px" placeholder="输入工号">
+                    <input type="text" id="test_name" style="margin-top: 20px" placeholder="请输入姓名"><br>
+                    <button class="btn btn-default" type="button" onclick="testFindUID()">确定</button>
+                </div>
+
+            </div>
+
+            <!--chat page content-->
+            <div class="container" id="chat_div" style="display: none;height: 100%; margin: 0px"></div>
+
+
+            <!--contact page content-->
+            <div class="container-fluid" id="contact_div" style="display: none; margin: 0px"></div>
+
+
+            <!--find page content-->
+            <div class="container" id="find_div" style="display: none">
+                <ul class="list-group">
+                    <li class="list-group-item no_padding_top_bottom">
+                        <div class="row">
+                            <div class="col-xs-10 no_padding"><input type="text" class="form-control"
+                                                                     placeholder="姓名/电话/工号搜索">
+                            </div>
+                            <div class="col-xs-2 no_padding" style="margin-top: 4px" align="center"><span
+                                    class="glyphicon glyphicon-search" aria-hidden="true"
+                                    style="font-size: 20px"></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <ul class="list-group">
+                    <li class="list-group-item no_padding">
+                        <button type="button" class="btn btn-default full_width" onclick="loadContact()">通讯录添加联系人<span
+                                class="glyphicon glyphicon-chevron-right float_right" aria-hidden="true"></span>
+                        </button>
+                    </li>
+                    <li class="list-group-item no_padding">
+                        <button type="button" class="btn btn-default full_width">群组建立
+                            <span class="glyphicon glyphicon-chevron-right float_right">
+                        </span>
+                        </button>
+                    </li>
+                </ul>
+                <ul class="list-group">
+                    <li class="list-group-item no_padding">
+                        <button type="button" class="btn btn-default full_width">加入讨论组
+                            <span class="glyphicon glyphicon-chevron-right float_right">
+                        </span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!--find through contact page content-->
+            <div class="container" id="find_through_contact_div" style="display: none; margin: 0px">
+                <ul class="list-group">
+                    <li class="list-group-item no_padding_top_bottom">
+                        <div class="row">
+                            <div class="col-xs-10 no_padding">
+                                <input type="text" style="height: 40px;" class="form-control" id="search_input"
+                                       placeholder="姓名/电话/工号搜索">
+                            </div>
+                            <div class="col-xs-2 no_padding" align="center">
+                                <button type="button" class="btn btn-default" style="height: 40px; width: 100%;"
+                                        onclick="sendFindCmd()"><span
+                                        class="glyphicon glyphicon-search" aria-hidden="true"
+                                        style="font-size: 20px"></span></button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div id="search_result_ul">
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!--toolbar-->
+    <div class="row full_width" style="height: 15%; margin: 0px;">
+        <div class="col-xs-12 full_width" style="background-color: white;box-shadow:
+         inset 1px -1px 1px #444, inset -1px 1px 1px #444; height: 100%; overflow: auto; padding: 0px;">
+            <div class="container-fluid full_height full_width">
+                <div class="row full_height full_width no_margin no_padding">
+                    <div class="col-xs-4 full_height" style="">
+                        <div align="center" id="chat_tab" class="full_height" style="padding: 10px">
+                            <span class="glyphicon glyphicon-envelope" aria-hidden="true"
+                                  style="font-size: 30px"></span>
+
+                            <p>chat</p>
+                        </div>
+
+                    </div>
+                    <div class="col-xs-4 full_height" style="padding: 2px">
+                        <div align="center" id="contact_tab" style="padding: 10px" class="full_height">
+                                <span class="glyphicon glyphicon-user" aria-hidden="true"
+                                      style="font-size: 30px"></span>
+
+                            <p>contact</p>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 full_height" style="padding: 2px">
+                        <div align="center" id="find_tab" style="padding: 10px;" class=" active full_height">
+                            <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"
+                                  style="font-size: 30px"></span>
+
+                            <p>find</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+<script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+</html>
